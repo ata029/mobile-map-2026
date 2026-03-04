@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="龍港國民小學校園導覽地圖 — 手機定位導覽系統">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>龍港國小校園導覽地圖</title>
+
+    <!-- 本地 CSS 資源 -->
+    <link rel="stylesheet" href="css/leaflet.min.css">
+    <link rel="stylesheet" href="css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- ==================== 全螢幕 Leaflet 地圖 ==================== -->
+    <div id="map"></div>
+
+    <!-- ==================== 地圖左側控制列 ==================== -->
+    <div class="map-controls-left" id="mapControlsLeft">
+        <!-- 指北針 -->
+        <button class="map-ctrl-btn compass-btn" id="compassBtn" title="指北針">
+            <span class="compass-n">N</span>
+            <i class="bi bi-cursor-fill" id="compassIcon" style="transform: rotate(0deg); color: #e74c3c;"></i>
+        </button>
+
+        <!-- 樓層選擇器 -->
+        <div class="floor-selector" id="floorSelector">
+            <button class="floor-btn" id="floorUp" title="上一層">
+                <i class="bi bi-chevron-up"></i>
+            </button>
+            <div class="floor-current" id="floorCurrent">1F</div>
+            <button class="floor-btn" id="floorDown" title="下一層">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
+
+        <!-- GPS 定位按鈕 -->
+        <button class="map-ctrl-btn gps-btn" id="gpsBtn" title="我的位置">
+            <i class="bi bi-crosshair"></i>
+        </button>
+    </div>
+
+    <!-- ==================== 地圖右側控制列 ==================== -->
+    <div class="map-controls-right" id="mapControlsRight">
+        <!-- 圖層切換（衛星/標準） -->
+        <button class="map-ctrl-btn layer-toggle-btn" id="layerToggleBtn" title="切換圖層">
+            2D
+        </button>
+
+        <!-- 放大 -->
+        <button class="map-ctrl-btn" id="zoomInBtn" title="放大地圖">
+            <i class="bi bi-plus-lg"></i>
+        </button>
+
+        <!-- 縮小 -->
+        <button class="map-ctrl-btn" id="zoomOutBtn" title="縮小地圖">
+            <i class="bi bi-dash-lg"></i>
+        </button>
+    </div>
+
+    <!-- 關懷模式按鈕 -->
+    <div class="care-btn" id="careBtn">
+        <button class="map-ctrl-btn" title="關懷模式">
+            <i class="bi bi-person-heart"></i>
+        </button>
+        <span class="care-label">關懷</span>
+    </div>
+
+    <!-- 查看位置浮動按鈕 -->
+    <button class="floating-action-btn" id="viewLocationBtn">查看我的位置</button>
+
+    <!-- ==================== 底部滑動面板 (Bottom Sheet) ==================== -->
+    <div class="bottom-sheet" id="bottomSheet">
+        <!-- 拖曳手把 -->
+        <div class="sheet-handle" id="sheetHandle">
+            <div class="sheet-handle-bar"></div>
+        </div>
+
+        <!-- 搜尋列 -->
+        <div class="search-container">
+            <div class="search-bar" id="searchBar">
+                <i class="bi bi-search"></i>
+                <input type="text" id="searchInput" placeholder="請輸入目的地" autocomplete="off">
+            </div>
+        </div>
+
+        <!-- 搜尋結果下拉 -->
+        <div class="search-results" id="searchResults"></div>
+
+        <!-- 快捷分類按鈕列 -->
+        <div class="quick-access" id="quickAccess">
+            <button class="quick-btn" data-category="classroom">
+                <div class="icon-circle">
+                    <i class="bi bi-book-fill"></i>
+                </div>
+                <span class="icon-label">教室</span>
+            </button>
+            <button class="quick-btn" data-category="admin">
+                <div class="icon-circle">
+                    <i class="bi bi-building-fill"></i>
+                </div>
+                <span class="icon-label">行政辦公</span>
+            </button>
+            <button class="quick-btn" data-category="restroom">
+                <div class="icon-circle">
+                    <i class="bi bi-sign-intersection-y-fill"></i>
+                </div>
+                <span class="icon-label">廁所</span>
+            </button>
+            <button class="quick-btn" data-category="sports">
+                <div class="icon-circle">
+                    <i class="bi bi-trophy-fill"></i>
+                </div>
+                <span class="icon-label">運動設施</span>
+            </button>
+            <button class="quick-btn" data-category="entrance">
+                <div class="icon-circle">
+                    <i class="bi bi-door-open-fill"></i>
+                </div>
+                <span class="icon-label">出入口</span>
+            </button>
+        </div>
+
+        <!-- 分頁內容區域 -->
+        <div class="tab-content" id="tabContent">
+            <!-- 熱門服務 -->
+            <div class="tab-pane active" id="tabHotServices">
+                <div class="service-grid" id="serviceGrid">
+                    <!-- 由 JS 動態載入 -->
+                </div>
+            </div>
+
+            <!-- 校園分區 -->
+            <div class="tab-pane" id="tabZones">
+                <div class="zone-list" id="zoneList">
+                    <!-- 由 JS 動態載入 -->
+                </div>
+            </div>
+
+            <!-- 學校介紹（佔位，點擊後開啟全頁） -->
+            <div class="tab-pane" id="tabInfo">
+                <div class="empty-state">
+                    <i class="bi bi-info-circle"></i>
+                    <p>載入中...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部分頁導覽列 -->
+        <div class="tab-nav" id="tabNav">
+            <button class="tab-nav-item active" data-tab="tabHotServices">設施總覽</button>
+            <button class="tab-nav-item" data-tab="tabZones">校園分區</button>
+            <button class="tab-nav-item" data-tab="tabInfo">學校介紹</button>
+        </div>
+    </div>
+
+    <!-- ==================== POI 列表檢視 ==================== -->
+    <div class="poi-list-view" id="poiListView">
+        <div class="poi-list-header">
+            <button class="back-btn" id="poiBackBtn" title="返回">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <div class="header-title" id="poiListTitle">洗手間(9處)</div>
+            <div style="width: 36px;"></div> <!-- 佔位平衡 -->
+        </div>
+        <div class="poi-list-body" id="poiListBody">
+            <!-- 由 JS 動態載入 -->
+        </div>
+        <!-- 去這裡導航按鈕 -->
+        <button class="navigate-fab" id="navigateFab">
+            <i class="bi bi-caret-right-fill"></i>
+            <span class="fab-label">去這裡</span>
+        </button>
+    </div>
+
+    <!-- ==================== 學校介紹全頁面 ==================== -->
+    <div class="info-page" id="infoPage">
+        <div class="info-page-header">
+            <button class="back-btn" id="infoBackBtn" title="返回">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+        </div>
+
+        <!-- 主視覺 Banner -->
+        <div
+            style="width:100%; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 50%, #4facfe 100%); aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+            <div style="font-size: 1.1rem; font-weight: 500; letter-spacing: 2px; opacity: 0.9;">嘉義縣東石鄉</div>
+            <div style="font-size: 2rem; font-weight: 900; margin-top: 8px;">龍港國民小學</div>
+            <div style="font-size: 0.9rem; margin-top: 8px; opacity: 0.9;">Longgang Elementary School</div>
+            <div style="font-size: 0.75rem; margin-top: 4px; opacity: 0.8;">校園導覽地圖 ✦ Campus Navigation Map</div>
+        </div>
+
+        <div class="info-body">
+            <h1 class="info-title">學校介紹</h1>
+
+            <div class="info-address">
+                <i class="bi bi-geo-alt-fill" style="color: #e74c3c;"></i>
+                <span>嘉義縣東石鄉龍港村</span>
+                <a class="map-link" id="showOnMapBtn">
+                    <i class="bi bi-map"></i> 校園地圖
+                </a>
+            </div>
+
+            <p class="info-text">
+                龍港國民小學位於嘉義縣東石鄉龍港村，是一所充滿在地文化特色的國民小學。學校鄰近漁塭與農田，自然生態環境豐富，校園北側設有防風林帶，展現了沿海地區學校的獨特風貌。
+            </p>
+            <p class="info-text">
+                校園設有完善的教學設施，包括一至六年級教室、幼兒園、圖書室、視聽教室、社會教室、美勞教室等專科教室。行政區域設有校長室、教導室、辦公室、輔導室及資訊健康中心，提供全面的行政服務與學生輔導。
+            </p>
+            <p class="info-text">
+                運動設施方面，學校擁有半圓式200公尺跑道運動場（直道寬10公尺、長130公尺）、兩座籃球場、有蓋球場及兒童遊戲場，為學生提供充足的運動與遊憩空間。校門位於南側，另設有側門及兩處後門方便師生出入。
+            </p>
+        </div>
+    </div>
+
+    <!-- ==================== JavaScript ==================== -->
+    <script src="js/leaflet.min.js"></script>
+    <script src="js/poi-data.js"></script>
+    <script src="js/map-core.js"></script>
+    <script src="js/geolocation.js"></script>
+    <script src="js/bottom-sheet.js"></script>
+</body>
+
+</html>
